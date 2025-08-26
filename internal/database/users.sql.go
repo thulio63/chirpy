@@ -42,6 +42,19 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 	return i, err
 }
 
+const findUser = `-- name: FindUser :one
+SELECT id
+FROM users
+WHERE email = $1
+`
+
+func (q *Queries) FindUser(ctx context.Context, email string) (uuid.UUID, error) {
+	row := q.db.QueryRowContext(ctx, findUser, email)
+	var id uuid.UUID
+	err := row.Scan(&id)
+	return id, err
+}
+
 const login = `-- name: Login :one
 SELECT id, created_at, updated_at, hashed_password
 FROM users
@@ -65,4 +78,23 @@ func (q *Queries) Login(ctx context.Context, email string) (LoginRow, error) {
 		&i.HashedPassword,
 	)
 	return i, err
+}
+
+const updateUser = `-- name: UpdateUser :exec
+UPDATE users
+SET email = $1,
+    hashed_password = $2,
+    updated_at = NOW()
+WHERE id = $3
+`
+
+type UpdateUserParams struct {
+	Email          string
+	HashedPassword string
+	ID             uuid.UUID
+}
+
+func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) error {
+	_, err := q.db.ExecContext(ctx, updateUser, arg.Email, arg.HashedPassword, arg.ID)
+	return err
 }

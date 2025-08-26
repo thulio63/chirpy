@@ -17,6 +17,7 @@ type apiConfig struct {
 	fileserverHits atomic.Int32
 	db *database.Queries
 	platform string
+	secret string
 }
 
 //takes in a handler, creates a new handler with data from running a function on the old handler, and returns new handler
@@ -54,6 +55,7 @@ func main() {
 		fileserverHits: atomic.Int32{}, 
 		db: dbQueries, 
 		platform: os.Getenv("PLATFORM"),
+		secret: os.Getenv("SECRET"),
 	}
 
 	//mux is a manager that can handle requests, custom functions, etc
@@ -67,8 +69,12 @@ func main() {
 	mux.HandleFunc("POST /api/chirps", config.handlerChirpsCreate)
 	mux.HandleFunc("GET /api/chirps", config.handlerChirpsRetrieve)
 	mux.HandleFunc("GET /api/chirps/{chirpID}", config.handlerChirpRetrieve)
+	mux.HandleFunc("DELETE /api/chirps/{chirpID}", config.handlerChirpDelete)
 	mux.HandleFunc("POST /api/users", config.handlerUserCreate)
+	mux.HandleFunc("PUT /api/users", config.handlerUserUpdate)
 	mux.HandleFunc("POST /api/login", config.handlerLogin)
+	mux.HandleFunc("POST /api/revoke", config.handlerRevoke)
+	mux.HandleFunc("POST /api/refresh", config.handlerRefresh)
 	mux.HandleFunc("GET /admin/metrics", config.handlerMetrics)
 	mux.HandleFunc("POST /admin/reset", config.handlerReset)
 

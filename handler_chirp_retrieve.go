@@ -6,7 +6,7 @@ import (
 	"github.com/google/uuid"
 )
 
-func (cfg *apiConfig)handlerChirpsRetrieve(w http.ResponseWriter, r *http.Request) {	
+	func (cfg *apiConfig)handlerChirpsRetrieve(w http.ResponseWriter, r *http.Request) {	
 
 	allChirps := []Chirp{}
 	chirps, err := cfg.db.RetrieveChirps(r.Context())

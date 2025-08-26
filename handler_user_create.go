@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/google/uuid"
@@ -15,6 +16,8 @@ type User struct {
 	Created_At time.Time `json:"created_at"`
 	Updated_At time.Time `json:"updated_at"`
 	Email string `json:"email"`
+	Token string `json:"token"`
+	RefreshToken string `json:"refresh_token"`
 }
 
 func (cfg *apiConfig) handlerUserCreate(w http.ResponseWriter, r *http.Request) {
@@ -62,5 +65,56 @@ func (cfg *apiConfig) handlerUserCreate(w http.ResponseWriter, r *http.Request) 
 			Updated_At: user.UpdatedAt,
 			Email: user.Email,
 		},
+	})
+}
+
+func (cfg *apiConfig) handlerUserUpdate(w http.ResponseWriter, r *http.Request) {
+	type parameters struct {
+		Email string `json:"email"`
+		Password string `json:"password"`
+	}  
+	type response struct {
+		Email string `json:"email"`
+	}
+
+	//prepare space for incoming data
+	userLogin := parameters{}
+	//decode json data
+	decoder := json.NewDecoder(r.Body)
+	err := decoder.Decode(&userLogin)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Couldn't decode parameters", err)
+		return
+	}
+
+	tok, err := auth.GetBearerToken(r.Header)
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, "Invalid token provided", err)
+		return 
+	}
+
+	uid, err := auth.ValidateJWT(tok, os.Getenv("SECRET"))
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, "Token could not be validated", err)
+	}
+
+	hashed, err := auth.HashPassword(userLogin.Password)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Failed to hash password", err)
+		return 
+	}
+
+	err = cfg.db.UpdateUser(r.Context(), database.UpdateUserParams{
+		Email: userLogin.Email,
+		HashedPassword: hashed,
+		ID: uid,
+	})
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Failed to update user", err)
+		return 
+	}
+
+	respondWithJSON(w, http.StatusOK, response{
+		Email: userLogin.Email,
 	})
 }

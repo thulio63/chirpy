@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	auth "github.com/thulio63/chirpy/internal/auth"
 	"github.com/thulio63/chirpy/internal/database"
 )
 
@@ -42,11 +43,25 @@ func (cfg *apiConfig)handlerChirpsCreate(w http.ResponseWriter, r *http.Request)
 	if err != nil {
 		respondWithError(w, http.StatusBadRequest, err.Error(), err)
 	}
+
+	//make sure user has JWT
+	token, err := auth.GetBearerToken(r.Header)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "failed to retrieve bearer token", err)
+	}
+	validatedUID, err := auth.ValidateJWT(token, cfg.secret) 
+	if err != nil  {
+		respondWithError(w, http.StatusUnauthorized, "invalid JWT", err)
+	}
+	//Not implemented yet!!
+	// if validatedUID != params.UserID {
+	// 	respondWithError(w, http.StatusUnauthorized, "cannot chirp from designated account", errors.New("uuid associated with JWT did not match the provided uuid"))
+	// }
 	
 	//connect with db to add chirp, chirps.sql fills in data
 	chirp, err := cfg.db.CreateChirp(r.Context(), database.CreateChirpParams{
 		Body: validated,
-		UserID: params.UserID,
+		UserID: validatedUID,
 	})
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Couldn't create Chirp", err)
