@@ -71,6 +71,7 @@ func (cfg *apiConfig)handlerLogin(w http.ResponseWriter, r *http.Request) {
 		Email: userLogin.Email,
 		Token: usr_token,
 		RefreshToken: ref_token.Token,
+		Chirpy_Red: data.IsChirpyRed.Bool,
 	}
 
 	respondWithJSON(w, http.StatusOK, response{

@@ -18,6 +18,7 @@ type apiConfig struct {
 	db *database.Queries
 	platform string
 	secret string
+	apikey string
 }
 
 //takes in a handler, creates a new handler with data from running a function on the old handler, and returns new handler
@@ -56,6 +57,7 @@ func main() {
 		db: dbQueries, 
 		platform: os.Getenv("PLATFORM"),
 		secret: os.Getenv("SECRET"),
+		apikey: os.Getenv("POLKA_KEY"),
 	}
 
 	//mux is a manager that can handle requests, custom functions, etc
@@ -75,6 +77,7 @@ func main() {
 	mux.HandleFunc("POST /api/login", config.handlerLogin)
 	mux.HandleFunc("POST /api/revoke", config.handlerRevoke)
 	mux.HandleFunc("POST /api/refresh", config.handlerRefresh)
+	mux.HandleFunc("POST /api/polka/webhooks", config.handlerUpgrade)
 	mux.HandleFunc("GET /admin/metrics", config.handlerMetrics)
 	mux.HandleFunc("POST /admin/reset", config.handlerReset)
 
